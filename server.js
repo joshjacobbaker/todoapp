@@ -1,4 +1,3 @@
-
 let express = require("express")
 let mongodb = require("mongodb")
 let sanitizeHTML = require("sanitize-html")
@@ -6,39 +5,33 @@ let sanitizeHTML = require("sanitize-html")
 let app = express()
 let db
 
-let port = process.env.PORT
-if (port == null || port == ""){
-  port = 3000
-}
+app.use(express.static("public"))
 
-app.use(express.static('public'))
-
-let connectionString = 'mongodb+srv://todoAppUser:!!11Aquarius@cluster0-gkoh7.mongodb.net/TodoApp?retryWrites=true&w=majority'
-
-mongodb.connect(connectionString, {useNewUrlParser: true, useUnifiedTopology: true}, function(err, client){
-db = client.db()
-app.listen(port)
+mongodb.connect(process.env.CONNECTIONSTRING, { useNewUrlParser: true, useUnifiedTopology: true }, function (err, client) {
+  db = client.db()
+  app.listen(process.env.PORT)
 })
 
 app.use(express.json())
-app.use(express.urlencoded({extended: false}))
+app.use(express.urlencoded({ extended: false }))
 
-function passwordProtected(req, res, next){
-  res.set('WWW-Authenticate', 'Basic realm="Simple todo app"')
+function passwordProtected(req, res, next) {
+  res.set("WWW-Authenticate", 'Basic realm="Simple todo app"')
   console.log(req.headers.authorization)
   if (req.headers.authorization == "Basic bGVhcm46amF2YXNjcmlwdA==") {
     next()
   } else {
     res.status(401).send("Authentication required")
   }
-  
 }
 
 app.use(passwordProtected)
 
-app.get("/", function(req, res){
-    db.collection('items').find().toArray(function(err, items){
-        res.send(`<!DOCTYPE html>
+app.get("/", function (req, res) {
+  db.collection("items")
+    .find()
+    .toArray(function (err, items) {
+      res.send(`<!DOCTYPE html>
         <html>
         <head>
           <meta charset="UTF-8">
@@ -75,27 +68,24 @@ app.get("/", function(req, res){
         </body>
         </html>`)
     })
-    
-
 })
 
-app.post('/create-item', function(req, res){
-  let safeText = sanitizeHTML(req.body.text, {allowedTags: [], allowedAttributes: []})
-db.collection('items').insertOne({text: safeText}, function(err, info){
+app.post("/create-item", function (req, res) {
+  let safeText = sanitizeHTML(req.body.text, { allowedTags: [], allowedAttributes: [] })
+  db.collection("items").insertOne({ text: safeText }, function (err, info) {
     res.json(info.ops[0])
-    })
+  })
 })
 
-app.post('/update-item', function(req, res){
-  let safeText = sanitizeHTML(req.body.text, {allowedTags: [], allowedAttributes: []})
-    db.collection('items').findOneAndUpdate({_id: new mongodb.ObjectId(req.body.id)}, {$set: {text: safeText}}, function(){
-        res.send("Success")
-    })
+app.post("/update-item", function (req, res) {
+  let safeText = sanitizeHTML(req.body.text, { allowedTags: [], allowedAttributes: [] })
+  db.collection("items").findOneAndUpdate({ _id: new mongodb.ObjectId(req.body.id) }, { $set: { text: safeText } }, function () {
+    res.send("Success")
+  })
 })
 
-app.post('/delete-item', function(req, res){
-    db.collection('items').deleteOne({_id: new mongodb.ObjectId(req.body.id)}, function(){
-        res.send("Success")
-    })
+app.post("/delete-item", function (req, res) {
+  db.collection("items").deleteOne({ _id: new mongodb.ObjectId(req.body.id) }, function () {
+    res.send("Success")
+  })
 })
-
