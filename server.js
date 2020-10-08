@@ -1,6 +1,8 @@
 let express = require("express")
 let mongodb = require("mongodb")
 let sanitizeHTML = require("sanitize-html")
+const dotenv = require("dotenv")
+dotenv.config()
 
 let app = express()
 let db
